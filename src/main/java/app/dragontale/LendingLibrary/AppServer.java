@@ -5,6 +5,7 @@ import io.vertx.core.Vertx;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.http.HttpServerResponse;
 import io.vertx.ext.web.Router;
+import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.mysqlclient.MySQLPool;
 
 public class AppServer {
@@ -14,45 +15,91 @@ public class AppServer {
 		HttpServer server = vertx.createHttpServer();
 
 		Router router = Router.router(vertx);
+		router.route().handler(BodyHandler.create());
+
+		MySQLPool client = new Connector().run(vertx);
 
 		router.route("/").handler(context -> {
 
 			HttpServerResponse response = context.response();
 
-      		response.putHeader("content-type", "text/plain");
-			response.end("HTTP server response test.");
+			vertx.fileSystem().readFile("C:/Users/Nikos/Desktop/Java/LendingLibrary/src/main/java/app/dragontale/LendingLibrary/resources/Greeting.txt", ar -> {
+				if (ar.succeeded()) {
+
+					response.putHeader("content-type", "text/plain");
+					response.end(ar.result());
+
+					System.out.println(" ");
+					System.out.println("Greeting.txt loaded.");
+
+				} else {
+
+					response.putHeader("content-type", "text/plain");
+					response.end("Something went wrong...");
+
+					System.out.println(" ");
+					System.err.println("Error while reading from file: " + ar.cause().getMessage());
+				}
+			});
 
 		});
 
-		router.route("/lending").handler(context -> {
+		router.route("/lendings/borrow").handler(context -> {
 			
 			MultiMap queryParams = context.queryParams();
 			String bookID = queryParams.get("bookID");
-			String lenderID = queryParams.get("lenderID");
+			String personID = queryParams.get("personID");
+			String pinCode = queryParams.get("pinCode");
 
-			MySQLPool client = new Connector().run(vertx);
-			new Lending().addEntry(client, bookID, lenderID);
+			new LendingAPI().addEntry(client, bookID, personID, pinCode);
 
 			HttpServerResponse response = context.response();
 
 			response.putHeader("content-type", "text/plain");
-			response.end("Book " + bookID + " lended to " + lenderID + ".");
+			response.end("Observe system output for request status.");
 
 		});
 
-		router.route("/return").handler(context -> {
+		router.route("/lendings/return").handler(context -> {
 			
 			MultiMap queryParams = context.queryParams();
-			String entryID = queryParams.get("entryID");
+			String lendingID = queryParams.get("lendingID");
 			String bookID = queryParams.get("bookID");
 
-			MySQLPool client = new Connector().run(vertx);
-			new Lending().closeEntry(client, entryID, bookID);
+			new LendingAPI().closeEntry(client, lendingID, bookID);
 
 			HttpServerResponse response = context.response();
 
 			response.putHeader("content-type", "text/plain");
-			response.end("Completed return for entry " + entryID + ".");
+			response.end("Observe system output for request status.");
+
+		});
+
+		router.route("/lendings/list").handler(context -> {
+
+			HttpServerResponse response = context.response();
+
+			//MySQLPool client = new Connector().run(vertx);
+			//new LendingAPI().personDetails(client, personID, pinCode);
+
+			response.putHeader("content-type", "text/plain");
+			response.end("Observe system output for request status.");
+
+		});
+
+		router.route("/lendings").handler(context -> {
+
+			HttpServerResponse response = context.response();
+
+			MultiMap queryParams = context.queryParams();
+			String lendingID = queryParams.get("lendingID");
+			String personID = queryParams.get("personID");
+			String pinCode = queryParams.get("pinCode");
+
+			new LendingAPI().retrieveEntry(client, lendingID, personID, pinCode);
+
+			response.putHeader("content-type", "text/plain");
+			response.end("Observe system output for request status.");
 
 		});
 
@@ -61,13 +108,12 @@ public class AppServer {
 			MultiMap queryParams = context.queryParams();
 			String bookID = queryParams.get("bookID");
 
-			MySQLPool client = new Connector().run(vertx);
-			new Books().bookName(client, bookID);
+			new BooksAPI().bookTitle(client, bookID);
 
 			HttpServerResponse response = context.response();
 
 			response.putHeader("content-type", "text/plain");
-			response.end("Book " + bookID);
+			response.end("Observe system output for request status.");
 
 		});
 
@@ -75,14 +121,14 @@ public class AppServer {
 
 			MultiMap queryParams = context.queryParams();
 			String personID = queryParams.get("personID");
+			String pinCode = queryParams.get("pinCode");
 
 			HttpServerResponse response = context.response();
 
-			MySQLPool client = new Connector().run(vertx);
-			new People().personDetails(client, personID);
+			new PeopleAPI().personDetails(client, personID, pinCode);
 
 			response.putHeader("content-type", "text/plain");
-			response.end("Person " + personID);
+			response.end("Observe system output for request status.");
 
 		});
 

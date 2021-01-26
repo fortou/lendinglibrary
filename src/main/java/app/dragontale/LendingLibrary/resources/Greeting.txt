@@ -1,0 +1,16 @@
+Welcome to the Lending Library.
+
+Use the following links to navigate and test the app's
+features. Replace asterisks with your input.
+
+Retrieve library book list: (Unavailable)
+http://localhost:8888/books/list
+
+Retrieve information about a book:
+http://localhost:8888/books/?=bookID=*
+
+Retrieve information about a person:
+http://localhost:8888/people/?=personID=*&pinCode=*
+
+Retrieve information about a lending: (Available only to staff)
+http://localhost:8888/lendings/?=lendingID=*&personID=*&pinCode=*
